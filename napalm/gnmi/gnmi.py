@@ -290,30 +290,34 @@ class gNMIDriver(NetworkDriver):
         """Implementation of NAPALM method get_facts."""
 
         # SRL specific version, TODO split up
-        result = self.gnmi.get(path=["/system"], encoding='json_ietf')
+        result = self.gnmi.get(path=["/system","/platform","/interface"], encoding='json_ietf')
         # print( f"get_facts:{result}")
 
-        data = result['notification'][0]['update'][0]['val']
-        print( f"VAL:{data}" )
-        version = data['srl_nokia-system-info:information']['version']
-        hostname = data['srl_nokia-system-name:name']['host-name']
-        domain = data['srl_nokia-system-name:name']['domain-name'] if 'domain-name' in data['srl_nokia-system-name:name'] else "undefined"
+        system = result['notification'][0]['update'][0]['val']
+        platform = result['notification'][1]['update'][0]['val']
+        interface = result['notification'][2]['update'][0]['val']['srl_nokia-interfaces:interface']
+        print( f"VAL:{interface}" )
+        version = system['srl_nokia-system-info:information']['version']
+        hostname = system['srl_nokia-system-name:name']['host-name']
+        domain = system['srl_nokia-system-name:name']['domain-name'] if 'domain-name' in system['srl_nokia-system-name:name'] else "undefined"
         # interfaces_dict = result[2]["interfaces"]
 
-        uptime = time.time() - dateutil_parse(data['srl_nokia-system-info:information']['last-booted']).timestamp()
+        uptime = time.time() - dateutil_parse(system['srl_nokia-system-info:information']['last-booted']).timestamp()
 
-        #interfaces = [i for i in interfaces_dict.keys() if "." not in i]
-        #interfaces = string_parsers.sorted_nicely(interfaces)
+        chassis = platform['srl_nokia-platform-chassis:chassis']
+
+        interfaces = [ i['name'] for i in interface ]
+        interfaces = string_parsers.sorted_nicely(interfaces)
 
         return {
             "hostname": hostname,
             "fqdn": hostname + '.' + domain,
             "vendor": "Nokia",
-            "model": "?",
-            "serial_number": "?",
+            "model": chassis['type'],
+            "serial_number": chassis['serial-number'],
             "os_version": version,
             "uptime": int(uptime),
-            # "interface_list": interfaces,
+            "interface_list": interfaces,
         }
 
     def get_interfaces(self):
