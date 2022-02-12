@@ -1,6 +1,13 @@
 # std libs
-import json
+import json, time
 # third party libs
+
+# Fix an issue with timezone processing in Python 3.6
+from dateutil.parser import parse as dateutil_parse
+
+# NAPALM base
+from napalm.base.utils import string_parsers
+
 
 # Functions
 def get_facts(gnmi_object, orgs) -> dict:

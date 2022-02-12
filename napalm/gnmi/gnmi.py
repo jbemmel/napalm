@@ -24,16 +24,12 @@ Read napalm.readthedocs.org for more information.
 
 # std libs
 import re
-import time
 import inspect
 
 from datetime import datetime
 from collections import defaultdict
 from netaddr import IPAddress
 from netaddr import IPNetwork
-
-# Fix an issue with timezone processing in Python 3.6
-from dateutil.parser import parse as dateutil_parse
 
 from netaddr.core import AddrFormatError
 
