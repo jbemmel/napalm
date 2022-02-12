@@ -32,6 +32,9 @@ from collections import defaultdict
 from netaddr import IPAddress
 from netaddr import IPNetwork
 
+# Fix an issue with timezone processing in Python 3.6
+from dateutil.parser import parse as dateutil_parse
+
 from netaddr.core import AddrFormatError
 
 # third party libs
@@ -113,6 +116,9 @@ class gNMIDriver(NetworkDriver):
             # TODO run commands to determine device type and version
             data = self.gnmi.get(path=["/system"], encoding='json_ietf')
             print( data )
+
+            caps = self.gnmi.capabilities()
+            print( f"CAPABILITIES URN: {caps['supported_models'][0]['name'].split('/')[0]}" )
             # sh_ver = self.device.run_commands(["show version"])
             # cli_version = (
             #     2 if EOSVersion(sh_ver[0]["version"]) >= EOSVersion("4.23.0") else 1
@@ -282,28 +288,32 @@ class gNMIDriver(NetworkDriver):
 
     def get_facts(self):
         """Implementation of NAPALM method get_facts."""
-        commands = ["show version", "show hostname", "show interfaces"]
 
-        result = self.device.run_commands(commands)
+        # SRL specific version, TODO split up
+        result = self.gnmi.get(path=["/system"], encoding='json_ietf')
+        # print( f"get_facts:{result}")
 
-        version = result[0]
-        hostname = result[1]
-        interfaces_dict = result[2]["interfaces"]
+        data = result['notification'][0]['update'][0]['val']
+        print( f"VAL:{data}" )
+        version = data['srl_nokia-system-info:information']['version']
+        hostname = data['srl_nokia-system-name:name']['host-name']
+        domain = data['srl_nokia-system-name:name']['domain-name'] if 'domain-name' in data['srl_nokia-system-name:name'] else "undefined"
+        # interfaces_dict = result[2]["interfaces"]
 
-        uptime = time.time() - version["bootupTimestamp"]
+        uptime = time.time() - dateutil_parse(data['srl_nokia-system-info:information']['last-booted']).timestamp()
 
-        interfaces = [i for i in interfaces_dict.keys() if "." not in i]
-        interfaces = string_parsers.sorted_nicely(interfaces)
+        #interfaces = [i for i in interfaces_dict.keys() if "." not in i]
+        #interfaces = string_parsers.sorted_nicely(interfaces)
 
         return {
-            "hostname": hostname["hostname"],
-            "fqdn": hostname["fqdn"],
-            "vendor": "Arista",
-            "model": version["modelName"],
-            "serial_number": version["serialNumber"],
-            "os_version": version["internalVersion"],
+            "hostname": hostname,
+            "fqdn": hostname + '.' + domain,
+            "vendor": "Nokia",
+            "model": "?",
+            "serial_number": "?",
+            "os_version": version,
             "uptime": int(uptime),
-            "interface_list": interfaces,
+            # "interface_list": interfaces,
         }
 
     def get_interfaces(self):
