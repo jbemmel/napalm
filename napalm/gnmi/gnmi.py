@@ -57,6 +57,14 @@ from napalm.base.exceptions import (
 import napalm.base.constants as c
 
 # local modules
+import napalm.gnmi.module_openconfig as oc_yang
+import napalm.gnmi.module_nokia as nokia_yang
+
+VENDOR_MODULE = {
+ "openconfig": oc_yang,
+ "nokia": nokia_yang
+}
+
 # here add local imports
 # e.g. import napalm.eos.helpers etc.
 
@@ -86,8 +94,10 @@ class gNMIDriver(NetworkDriver):
         self.timeout = timeout
         self.config_session = None
         self.locked = False
+        self.vendor = None
 
         self.platform = "gnmi" # TODO auto-detect: cEOS or SR Linux
+        self.port = optional_args.get("port", 57400)
         self.profile = [self.platform]
 
         self._process_optional_args(optional_args or {})
@@ -103,7 +113,7 @@ class gNMIDriver(NetworkDriver):
         """Implementation of NAPALM method open."""
         try:
             self.gnmi = gNMIclient(
-                target=(self.hostname,57400),
+                target=(self.hostname, self.port), #
                 username=self.username,
                 password=self.password,
                 gnmi_timeout=self.timeout,
@@ -114,22 +124,34 @@ class gNMIDriver(NetworkDriver):
             self.gnmi.connect()
 
             # TODO run commands to determine device type and version
-            data = self.gnmi.get(path=["/system"], encoding='json_ietf')
-            print( data )
+            data = self.gnmi.capabilities()
 
-            caps = self.gnmi.capabilities()
-            print( f"CAPABILITIES URN: {caps['supported_models'][0]['name'].split('/')[0]}" )
-            # sh_ver = self.device.run_commands(["show version"])
-            # cli_version = (
-            #     2 if EOSVersion(sh_ver[0]["version"]) >= EOSVersion("4.23.0") else 1
-            # )
+            self.orgs = set()
 
-            # self.device.update_cli_version(cli_version)
+            for item in data["supported_models"]:
+                self.orgs.update([re.sub(r'^\W*(\w+)\W*$', r'\1', word) for word in item["organization"].lower().split()])
+
         except Exception as ce:
             # and this is raised either if device not avaiable
             # either if HTTP(S) agent is not enabled
             # show management api http-commands
             raise ConnectionException(str(ce))
+
+        # Define a vendor
+        if "openconfig" in self.orgs:
+            self.vendor = "openconfig"
+
+        elif "nokia" in self.orgs:
+            self.vendor = "nokia"
+
+        # elif "cisco" in self.orgs:
+        #     self.vendor = "cisco"
+
+        # elif "arista" in self.orgs:
+        #     self.vendor = "arista"
+        else:
+            raise ConnectionException( f"Unsupported vendor: {self.orgs}" )
+        assert( self.vendor in VENDOR_MODULE )
 
     def close(self):
         """Implementation of NAPALM method close."""
@@ -288,37 +310,7 @@ class gNMIDriver(NetworkDriver):
 
     def get_facts(self):
         """Implementation of NAPALM method get_facts."""
-
-        # SRL specific version, TODO split up
-        result = self.gnmi.get(path=["/system","/platform","/interface"], encoding='json_ietf')
-        # print( f"get_facts:{result}")
-
-        system = result['notification'][0]['update'][0]['val']
-        platform = result['notification'][1]['update'][0]['val']
-        interface = result['notification'][2]['update'][0]['val']['srl_nokia-interfaces:interface']
-        print( f"VAL:{interface}" )
-        version = system['srl_nokia-system-info:information']['version']
-        hostname = system['srl_nokia-system-name:name']['host-name']
-        domain = system['srl_nokia-system-name:name']['domain-name'] if 'domain-name' in system['srl_nokia-system-name:name'] else "undefined"
-        # interfaces_dict = result[2]["interfaces"]
-
-        uptime = time.time() - dateutil_parse(system['srl_nokia-system-info:information']['last-booted']).timestamp()
-
-        chassis = platform['srl_nokia-platform-chassis:chassis']
-
-        interfaces = [ i['name'] for i in interface ]
-        interfaces = string_parsers.sorted_nicely(interfaces)
-
-        return {
-            "hostname": hostname,
-            "fqdn": hostname + '.' + domain,
-            "vendor": "Nokia",
-            "model": chassis['type'],
-            "serial_number": chassis['serial-number'],
-            "os_version": version,
-            "uptime": int(uptime),
-            "interface_list": interfaces,
-        }
+        return VENDOR_MODULE[ self.vendor ].get_facts(gnmi_object=self.gnmi, orgs=self.orgs)
 
     def get_interfaces(self):
         commands = ["show interfaces"]
