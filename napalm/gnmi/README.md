@@ -8,6 +8,8 @@ It is based on the Arista EOS driver (thanks everyone!) with the EOS API replace
 # Setup
 
 ```
+sudo apt install -y python38-venv
+python3 -m pip install pip --upgrade
 git clone https://github.com/jbemmel/napalm.git --branch nanog84-hackathon-gnmi-driver
 cd napalm
 python3 -m venv ./venv
