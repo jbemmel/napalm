@@ -1,0 +1,30 @@
+#
+# NANOG84 Hackathon multi-vendor topology with SR Linux and cEOS
+#
+
+module: [ bgp ]
+
+provider: clab
+
+defaults:
+ device: srlinux
+ devices:
+  srlinux.clab.image: ghcr.io/nokia/srlinux:latest
+  eos.clab.image: ceos:latest
+
+addressing:
+  loopback:
+    ipv4: 10.0.0.0/24
+    ipv6: 2001:10::/48
+
+nodes:
+  ce1:
+  ce2:
+  pe1:
+  pe2:
+  pe3:
+  pe4:
+  p1:
+  p2:
+
+links: [ ce1-pe1, pe1-p1, pe1-p2, pe2-p1, pe2-p2, pe3-p1, pe3-p2, pe4-p1, pe4-p2, pe4-ce2 ]
