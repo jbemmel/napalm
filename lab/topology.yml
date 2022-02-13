@@ -9,8 +9,8 @@ provider: clab
 defaults:
  device: srlinux
  devices:
-  srlinux.image.clab: ghcr.io/nokia/srlinux:latest
-  eos.image.clab: ceos:latest
+  srlinux.clab.image: ghcr.io/nokia/srlinux:latest
+  eos.clab.image: ceos:latest
 
 nodes:
   a:
