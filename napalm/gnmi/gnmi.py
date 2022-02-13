@@ -94,8 +94,9 @@ class gNMIDriver(NetworkDriver):
 
         self.platform = "gnmi" # TODO auto-detect: cEOS or SR Linux
         self.port = optional_args.get("port", 57400)
+        self.insecure = optional_args.get("insecure", False)
         self.profile = [self.platform]
-
+        
         self._process_optional_args(optional_args or {})
 
     def _process_optional_args(self, optional_args):
@@ -113,7 +114,7 @@ class gNMIDriver(NetworkDriver):
                 username=self.username,
                 password=self.password,
                 gnmi_timeout=self.timeout,
-                insecure=False # hardcoded, TODO parameter
+                insecure=(self.insecure) # hardcoded, TODO parameter
                 # **self.eapi_kwargs
             )
 
