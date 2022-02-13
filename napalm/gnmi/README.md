@@ -16,6 +16,9 @@ python3 -m pip install -r requirements.txt -r requirements-dev.txt
 python3 -m setup install
 ```
 
+## NetBox
+At https://github.com/jbemmel/netbox-docker/tree/nanog84-hackathon is a branch to build a NetBox image with the new gNMI NAPALM driver built in
+
 # Test
 Using NAPALM CLI:
 ```
