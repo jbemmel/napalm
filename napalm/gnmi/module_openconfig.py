@@ -101,3 +101,86 @@ def get_facts(gnmi_object, orgs) -> dict:
     result["interface_list"] = interface_list
 
     return result
+
+
+def get_interfaces(gnmi_object, orgs) -> dict:
+    result = {}
+
+    data = gnmi_object.get(path=["/openconfig-interfaces:interfaces"])
+
+    if_list = "openconfig-interfaces:interface" if "openconfig-interfaces:interface" in data["notification"][0]["update"][0]["val"] \
+        else "interface"
+
+    for item in data["notification"][0]["update"][0]["val"][if_list]:
+        result[item["name"]] = {}
+        
+        # Oper state
+        try:
+            result[item["name"]]["is_up"] = item["state"]["oper-status"]
+
+        except:
+            result[item["name"]]["is_up"] = False
+
+        # Admin state
+        try:
+            result[item["name"]]["is_enabled"] = item["state"]["enabled"]
+
+        except:
+            result[item["name"]]["is_enabled"] = False
+
+        # Description
+        try:
+            result[item["name"]]["description"] = item["state"]["description"]
+
+        except:
+            result[item["name"]]["description"] = ""
+
+        # Last flap
+        try:
+            result[item["name"]]["last_flapped"] = int(item["state"]["last-change"]) / 10 ** 9
+
+        except:
+            result[item["name"]]["last_flapped"] = 0
+
+        # MTU
+        try:
+            result[item["name"]]["mtu"] = item["state"]["mtu"]
+
+        except:
+            result[item["name"]]["mtu"] = ""
+
+        eth_dict = "openconfig-if-ethernet:ethernet" if "openconfig-if-ethernet:ethernet" in item \
+            else "ethernet"
+
+        # MAC addres
+        try:
+            result[item["name"]]["mac_address"] = item[eth_dict]["state"]["mac-address"]
+
+        except:
+            result[item["name"]]["mac_address"] = ""
+
+        # Speed
+        try:
+            speeds = {
+                        "SPEED_10MB": 10,
+                        "SPEED_100MB": 100,
+                        "SPEED_1GB": 1000,
+                        "SPEED_2500MB": 2500,
+                        "SPEED_5GB": 5000,
+                        "SPEED_10GB": 10000,
+                        "SPEED_25GB": 25000,
+                        "SPEED_40GB": 40000,
+                        "SPEED_50GB": 50000,
+                        "SPEED_100GB": 100000,
+                        "SPEED_200GB": 200000,
+                        "SPEED_400GB": 400000,
+                        "SPEED_600GB": 600000,
+                        "SPEED_800GB": 800000,
+                        "SPEED_UNKNOWN": 0
+            }
+            result[item["name"]]["speed"] = speeds[item[eth_dict]["state"]["port-speed"]]
+
+        except:
+            result[item["name"]]["speed"] = 0
+
+    return result

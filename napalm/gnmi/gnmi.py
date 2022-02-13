@@ -309,38 +309,8 @@ class gNMIDriver(NetworkDriver):
         return VENDOR_MODULE[ self.vendor ].get_facts(gnmi_object=self.gnmi, orgs=self.orgs)
 
     def get_interfaces(self):
-        commands = ["show interfaces"]
-        output = self.device.run_commands(commands)[0]
-
-        interfaces = {}
-
-        for interface, values in output["interfaces"].items():
-            interfaces[interface] = {}
-
-            if values["lineProtocolStatus"] == "up":
-                interfaces[interface]["is_up"] = True
-                interfaces[interface]["is_enabled"] = True
-            else:
-                interfaces[interface]["is_up"] = False
-                if values["interfaceStatus"] == "disabled":
-                    interfaces[interface]["is_enabled"] = False
-                else:
-                    interfaces[interface]["is_enabled"] = True
-
-            interfaces[interface]["description"] = values["description"]
-
-            interfaces[interface]["last_flapped"] = values.pop(
-                "lastStatusChangeTimestamp", -1.0
-            )
-
-            interfaces[interface]["mtu"] = int(values["mtu"])
-            #            interfaces[interface]["speed"] = float(values["bandwidth"] * 1e-6)
-            interfaces[interface]["speed"] = float(values["bandwidth"] / 1000000.0)
-            interfaces[interface]["mac_address"] = napalm.base.helpers.convert(
-                napalm.base.helpers.mac, values.pop("physicalAddress", "")
-            )
-
-        return interfaces
+        """Implementation of NAPALM method get_interfaces."""
+        return VENDOR_MODULE[ self.vendor ].get_interfaces(gnmi_object=self.gnmi, orgs=self.orgs)
 
     def get_lldp_neighbors(self):
         commands = ["show lldp neighbors"]
