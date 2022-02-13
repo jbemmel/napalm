@@ -12,6 +12,11 @@ defaults:
   srlinux.clab.image: ghcr.io/nokia/srlinux:latest
   eos.clab.image: ceos:latest
 
+addressing:
+  loopback:
+    ipv4: 10.0.0.0/24
+    ipv6: 2001:10::/48
+
 nodes:
   a:
     bgp.as: 65001
