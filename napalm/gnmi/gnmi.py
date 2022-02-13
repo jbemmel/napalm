@@ -313,45 +313,12 @@ class gNMIDriver(NetworkDriver):
         return VENDOR_MODULE[ self.vendor ].get_interfaces(gnmi_object=self.gnmi, orgs=self.orgs)
 
     def get_lldp_neighbors(self):
-        commands = ["show lldp neighbors"]
-        output = self.device.run_commands(commands)[0]["lldpNeighbors"]
-
-        lldp = {}
-
-        for n in output:
-            if n["port"] not in lldp.keys():
-                lldp[n["port"]] = []
-
-            lldp[n["port"]].append(
-                {"hostname": n["neighborDevice"], "port": n["neighborPort"]}
-            )
-
-        return lldp
+        """Implementation of NAPALM method get_lldp_neighbors."""
+        return VENDOR_MODULE[ self.vendor ].get_lldp_neighbors(gnmi_object=self.gnmi, orgs=self.orgs)
 
     def get_interfaces_counters(self):
-        commands = ["show interfaces"]
-        output = self.device.run_commands(commands)
-        interface_counters = defaultdict(dict)
-        for interface, data in output[0]["interfaces"].items():
-            if data["hardware"] == "subinterface":
-                # Subinterfaces will never have counters so no point in parsing them at all
-                continue
-            counters = data.get("interfaceCounters", {})
-            interface_counters[interface].update(
-                tx_octets=counters.get("outOctets", -1),
-                rx_octets=counters.get("inOctets", -1),
-                tx_unicast_packets=counters.get("outUcastPkts", -1),
-                rx_unicast_packets=counters.get("inUcastPkts", -1),
-                tx_multicast_packets=counters.get("outMulticastPkts", -1),
-                rx_multicast_packets=counters.get("inMulticastPkts", -1),
-                tx_broadcast_packets=counters.get("outBroadcastPkts", -1),
-                rx_broadcast_packets=counters.get("inBroadcastPkts", -1),
-                tx_discards=counters.get("outDiscards", -1),
-                rx_discards=counters.get("inDiscards", -1),
-                tx_errors=counters.get("totalOutErrors", -1),
-                rx_errors=counters.get("totalInErrors", -1),
-            )
-        return interface_counters
+        """Implementation of NAPALM method get_lldp_neighbors."""
+        return VENDOR_MODULE[ self.vendor ].get_interfaces_counters(gnmi_object=self.gnmi, orgs=self.orgs)
 
     def get_bgp_neighbors(self):
         def get_re_group(res, key, default=None):

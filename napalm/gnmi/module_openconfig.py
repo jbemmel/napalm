@@ -8,7 +8,6 @@ def get_facts(gnmi_object, orgs) -> dict:
     result = {}
 
     data = gnmi_object.get(path=["/openconfig-system:system", "openconfig-platform:components", "/openconfig-interfaces:interfaces"])
-#    print(json.dumps(data, indent=4))
 
     # Get hostname
     try:
@@ -84,7 +83,6 @@ def get_facts(gnmi_object, orgs) -> dict:
 
     result["uptime"] = uptime / 10 ** 9 ## Converting to seconds to match NAPALM
 
-
     # Get Interfaces list
     interface_list = []
     try:
@@ -140,7 +138,7 @@ def get_interfaces(gnmi_object, orgs) -> dict:
             result[item["name"]]["last_flapped"] = int(item["state"]["last-change"]) / 10 ** 9
 
         except:
-            result[item["name"]]["last_flapped"] = 0
+            result[item["name"]]["last_flapped"] = -1
 
         # MTU
         try:
@@ -176,11 +174,132 @@ def get_interfaces(gnmi_object, orgs) -> dict:
                         "SPEED_400GB": 400000,
                         "SPEED_600GB": 600000,
                         "SPEED_800GB": 800000,
-                        "SPEED_UNKNOWN": 0
+                        "SPEED_UNKNOWN": -1
             }
             result[item["name"]]["speed"] = speeds[item[eth_dict]["state"]["port-speed"]]
 
         except:
-            result[item["name"]]["speed"] = 0
+            result[item["name"]]["speed"] = -1
+
+    return result
+
+
+def get_lldp_neighbors(gnmi_object, orgs) -> dict:
+    result = {}
+
+    data = gnmi_object.get(path=["/openconfig-lldp:lldp"])
+
+    lldp_dict = "openconfig-lldp:interfaces" if "openconfig-lldp:interfaces" in data["notification"][0]["update"][0]["val"] \
+        else "interfaces"
+
+    for item in data["notification"][0]["update"][0]["val"][lldp_dict]["interface"]:
+        result[item["name"]] = {}
+
+        try:
+            for item2 in item["neighbors"]["neighbor"]:
+                result[item["name"]]["hostname"] = item2["state"]["system-name"]
+                result[item["name"]]["port"] = item2["state"]["port-id"]
+
+        except:
+            pass
+
+    return result
+
+def get_interfaces_counters(gnmi_object, orgs) -> dict:
+    result = {}
+
+    data = gnmi_object.get(path=["/openconfig-interfaces:interfaces"])
+
+    if_list = "openconfig-interfaces:interface" if "openconfig-interfaces:interface" in data["notification"][0]["update"][0]["val"] \
+        else "interface"
+
+    #tx_errors
+
+    for item in data["notification"][0]["update"][0]["val"][if_list]:
+        result[item["name"]] = {}
+
+        #tx_errors
+        try:
+            result[item["name"]]["tx_errors"] = int(item["state"]["counters"]["out-errors"])
+
+        except:
+            result[item["name"]]["tx_errors"] = -1
+
+        #rx_errors
+        try:
+            result[item["name"]]["rx_errors"] = int(item["state"]["counters"]["in-errors"])
+
+        except:
+            result[item["name"]]["rx_errors"] = -1
+
+        #tx_discards
+        try:
+            result[item["name"]]["tx_discards"] = int(item["state"]["counters"]["out-discards"])
+
+        except:
+            result[item["name"]]["tx_discards"] = -1
+
+        #rx_discards
+        try:
+            result[item["name"]]["rx_discards"] = int(item["state"]["counters"]["in-discards"])
+
+        except:
+            result[item["name"]]["rx_discards"] = -1
+
+        #tx_octets
+        try:
+            result[item["name"]]["tx_octets"] = int(item["state"]["counters"]["out-octets"])
+
+        except:
+            result[item["name"]]["tx_octets"] = -1
+
+        #rx_octets
+        try:
+            result[item["name"]]["rx_octets"] = int(item["state"]["counters"]["in-octets"])
+
+        except:
+            result[item["name"]]["rx_octets"] = -1
+
+        #tx_unicast_packets
+        try:
+            result[item["name"]]["tx_unicast_packets"] = int(item["state"]["counters"]["out-unicast-pkts"])
+
+        except:
+            result[item["name"]]["tx_unicast_packets"] = -1
+
+        #rx_unicast_packets
+        try:
+            result[item["name"]]["rx_unicast_packets"] = int(item["state"]["counters"]["in-unicast-pkts"])
+
+        except:
+            result[item["name"]]["rx_unicast_packets"] = -1
+
+        #tx_multicast_packets
+        try:
+            result[item["name"]]["tx_multicast_packets"] = int(item["state"]["counters"]["out-multicast-pkts"])
+
+        except:
+            result[item["name"]]["tx_multicast_packets"] = -1
+
+        #rx_multicast_packets
+        try:
+            result[item["name"]]["rx_multicast_packets"] = int(item["state"]["counters"]["in-multicast-pkts"])
+
+        except:
+            result[item["name"]]["rx_multicast_packets"] = -1
+
+        #tx_broadcast_packets
+        try:
+            result[item["name"]]["tx_broadcast_packets"] = int(item["state"]["counters"]["out-broadcast-pkts"])
+
+        except:
+            result[item["name"]]["tx_broadcast_packets"] = -1
+
+        #rx_broadcast_packets
+        try:
+            result[item["name"]]["rx_broadcast_packets"] = int(item["state"]["counters"]["in-broadcast-pkts"])
+
+        except:
+            result[item["name"]]["rx_broadcast_packets"] = -1
 
     return result
