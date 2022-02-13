@@ -9,13 +9,14 @@ provider: clab
 defaults:
  device: srlinux
  devices:
-  srlinux.image.clab: ghcr.io/nokia/srlinux:21.11.2
+  srlinux.image.clab: ghcr.io/nokia/srlinux:latest
+  eos.image.clab: ceos:latest
 
 nodes:
   a:
     bgp.as: 65001
   b:
-    # device: eos # TODO
+    device: eos
     bgp.as: 65002
 
 links: [ a-b ]
