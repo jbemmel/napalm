@@ -17,6 +17,8 @@ addressing:
     ipv4: 10.0.0.0/24
     ipv6: 2001:10::/48
 
+bgp.as: 65000
+
 nodes:
   ce1:
   ce2:
