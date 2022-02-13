@@ -25,7 +25,7 @@ At https://github.com/jbemmel/netbox-docker/tree/nanog84-hackathon is a branch t
 Using NAPALM CLI:
 ```
 napalm --vendor gnmi --user admin --password admin clab-n84_hackathon-srl1 call get_facts
-napalm --vendor gnmi --user admin --password admin clab-n84_hackathon-ceos1 call get_facts
+napalm --vendor gnmi --user admin --password admin --optional_args port=6030 clab-n84_hackathon-ceos1 call get_facts
 ```
 
 ![Napalm_olypics](https://user-images.githubusercontent.com/2031627/153724175-69f9fcd0-bcbe-49e5-8676-89de32c1f9b3.png)
